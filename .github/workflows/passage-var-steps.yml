@@ -1,0 +1,27 @@
+name: Passage variables entre steps
+on: push
+
+permissions:
+    contents: read  # Permissions minimales
+
+jobs:
+  afficher-infos:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Calculer la version
+        id: version  # L'ID est obligatoire pour référencer ce step
+        run: |
+          # Lire la version depuis un fichier
+          VERSION=$(cat VERSION)
+          echo "Version trouvée: $VERSION"
+
+          # Écrire dans GITHUB_OUTPUT pour que les autres steps puissent lire
+          echo "value=$VERSION" >> $GITHUB_OUTPUT
+
+          # Vous pouvez écrire plusieurs valeurs
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          
+      - name: Utiliser les valeurs calculées
+        run: |
+          echo "Version: ${{ steps.version.outputs.value }}"
+          echo "SHA court: ${{ steps.version.outputs.sha_short }}"
