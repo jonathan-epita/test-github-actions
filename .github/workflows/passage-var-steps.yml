@@ -1,27 +1,40 @@
-name: Passage variables entre steps
+name: Passage des étapes de version
 on: push
-
 permissions:
-    contents: read  # Permissions minimales
+  contents: read
 
 jobs:
-  afficher-infos:
+  version:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.calc.outputs.version }}  # Exposer pour d'autres jobs
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0  # Nécessaire pour compter les commits
+
+      - name: Calculer la version
+        id: calc
+        run: |
+          # Version = tag + nombre de commits depuis
+          LAATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
+
+          if [ -z "$LATEST_TAG" ]; then
+            COMMITS_SINCE=$(git rev-list HEAD --count)
+            VERSION="v0.0.0-${COMMITS_SINCE}"
+          else
+            COMMITS_SINCE=$(git rev-list "${LATEST_TAG}..HEAD" --count)
+            VERSION="${LATEST_TAG}-${COMMITS_SINCE}"
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Version calculée : $VERSION"
+
+  build:
+    needs: version
     runs-on: ubuntu-24.04
     steps:
-      - name: Calculer la version
-        id: version  # L'ID est obligatoire pour référencer ce step
+      - name: Build avec la version
         run: |
-          # Lire la version depuis un fichier
-          VERSION=$(cat VERSION)
-          echo "Version trouvée: $VERSION"
-
-          # Écrire dans GITHUB_OUTPUT pour que les autres steps puissent lire
-          echo "value=$VERSION" >> $GITHUB_OUTPUT
-
-          # Vous pouvez écrire plusieurs valeurs
-          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-          
-      - name: Utiliser les valeurs calculées
-        run: |
-          echo "Version: ${{ steps.version.outputs.value }}"
-          echo "SHA court: ${{ steps.version.outputs.sha_short }}"
+          echo "Construction de la version ${{ needs.version.outputs.version }}"
