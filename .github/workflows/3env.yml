@@ -1,0 +1,28 @@
+name: 3 niveaux env
+on: push
+
+env:
+  NIVEAU_WORKFLOW: "accessible partout"  # ① Niveau workflow
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    env:
+      NIVEAU_JOB: "accessible dans ce job"  # ② Niveau job
+
+    steps:
+      - name: Premier step
+        env:
+          NIVEAU_STEP: "accessible dans ce step uniquement"  # ③ Niveau step
+        run: |
+          # Les 3 sont accessibles ici
+          echo "Workflow: ${{ env.NIVEAU_WORKFLOW }}"
+          echo "Job: ${{ env.NIVEAU_JOB }}"
+          echo "Step: ${{ env.NIVEAU_STEP }}"
+
+      - name: Deuxième step
+        run: |
+          # Seuls workflow et job sont accessibles
+          echo "Workflow: ${{ env.NIVEAU_WORKFLOW }}"
+          echo "Job: ${{ env.NIVEAU_JOB }}"
+          # NIVEAU_STEP n'existe pas ici !
